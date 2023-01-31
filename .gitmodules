@@ -1,0 +1,3 @@
+[submodule "test/themes/keywind"]
+	path = test/themes/keywind
+	url = https://github.com/lukin/keywind.git

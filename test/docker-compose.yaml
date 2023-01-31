@@ -1,0 +1,93 @@
+version: '3.8'
+
+networks:
+  keycloak_test_i4Kjm9pW:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
+          gateway: 10.5.0.1
+
+services:
+
+  postgres:
+    image: postgres:15.1-alpine3.17
+    env_file:
+      - ./keycloak-postgres.env
+    container_name: postgres-keycloak-db
+    restart: unless-stopped
+    # ports:
+    #   - '5432:5432'
+    networks:
+      keycloak_test_i4Kjm9pW:
+        ipv4_address: 10.5.0.11
+
+  keycloak-1:
+    container_name: keycloak-1
+    image: gandalfmagic/keycloak:20.0.3-1
+    restart: unless-stopped
+    environment:
+      - JGROUPS_DISCOVERY_EXTERNAL_IP=10.5.0.21
+    env_file:
+      - ./keycloak-postgres.env
+    entrypoint: /opt/keycloak/bin/kc.sh start --optimized
+    depends_on:
+      - postgres
+    volumes:
+      - ../conf/cache-ispn-jdbc-ping.xml:/opt/keycloak/conf/cache-ispn-jdbc-ping.xml
+      - ./themes/keywind/theme/keywind/:/opt/keycloak/themes/keywind/
+    networks:
+      keycloak_test_i4Kjm9pW:
+        ipv4_address: 10.5.0.21
+
+  keycloak-2:
+    container_name: keycloak-2
+    image: gandalfmagic/keycloak:20.0.3-1
+    restart: unless-stopped
+    environment:
+      - JGROUPS_DISCOVERY_EXTERNAL_IP=10.5.0.22
+    env_file:
+      - ./keycloak-postgres.env
+    entrypoint: /opt/keycloak/bin/kc.sh start --optimized
+    depends_on:
+      - postgres
+    volumes:
+      - ../conf/cache-ispn-jdbc-ping.xml:/opt/keycloak/conf/cache-ispn-jdbc-ping.xml
+      - ./themes/keywind/theme/keywind/:/opt/keycloak/themes/keywind/
+    networks:
+      keycloak_test_i4Kjm9pW:
+        ipv4_address: 10.5.0.22
+
+  keycloak-3:
+    container_name: keycloak-3
+    image: gandalfmagic/keycloak:20.0.3-1
+    restart: unless-stopped
+    environment:
+      - JGROUPS_DISCOVERY_EXTERNAL_IP=10.5.0.23
+    env_file:
+      - ./keycloak-postgres.env
+    entrypoint: /opt/keycloak/bin/kc.sh start --optimized
+    depends_on:
+      - postgres
+    volumes:
+      - ../conf/cache-ispn-jdbc-ping.xml:/opt/keycloak/conf/cache-ispn-jdbc-ping.xml
+      - ./themes/keywind/theme/keywind/:/opt/keycloak/themes/keywind/
+    networks:
+      keycloak_test_i4Kjm9pW:
+        ipv4_address: 10.5.0.23
+
+  haproxy:
+    container_name: haproxy-keycloak
+    image: haproxy:2.3
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - keycloak-1
+      - keycloak-2
+      - keycloak-3
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      keycloak_test_i4Kjm9pW:
+        ipv4_address: 10.5.0.30
